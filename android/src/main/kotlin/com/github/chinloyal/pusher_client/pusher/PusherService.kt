@@ -34,13 +34,13 @@ class PusherService : MChannel {
         var enableLogging: Boolean = false
         var eventSink: EventSink? = null
         fun debugLog(msg: String) {
-            if(enableLogging) {
+            if (enableLogging) {
                 Log.d(LOG_TAG, msg)
             }
         }
 
         fun errorLog(msg: String) {
-            if(enableLogging) {
+            if (enableLogging) {
                 Log.e(LOG_TAG, msg)
             }
         }
@@ -49,7 +49,7 @@ class PusherService : MChannel {
     override fun register(messenger: BinaryMessenger) {
         MethodChannel(messenger, CHANNEL_NAME).setMethodCallHandler { call, result ->
             when (call.method) {
-                "init" ->  init(call, result)
+                "init" -> init(call, result)
                 "connect" -> connect(result)
                 "disconnect" -> disconnect(result)
                 "getSocketId" -> getSocketId(result)
@@ -80,41 +80,41 @@ class PusherService : MChannel {
         val initArgs: JSONObject = args.getJSONObject("initArgs")
         enableLogging = initArgs.getBoolean("enableLogging")
 
-        if(_pusherInstance == null) {
-            val options: JSONObject = args.getJSONObject("pusherOptions")
-            val pusherOptions = PusherOptions()
+        val options: JSONObject = args.getJSONObject("pusherOptions")
+        val pusherOptions = PusherOptions()
 
-            if (!options.isNull("auth")) {
-                val auth: JSONObject = options.getJSONObject("auth")
-                val endpoint: String = auth.getString("endpoint")
-                val headersMap: Map<String, String> = Gson().fromJson<Map<String, String>>(auth.getString("headers"), Map::class.java)
-                val encodedConnectionFactory = if (headersMap.containsValue("application/json"))
-                    JsonEncodedConnectionFactory() else UrlEncodedConnectionFactory()
+        if (!options.isNull("auth")) {
+            val auth: JSONObject = options.getJSONObject("auth")
+            val endpoint: String = auth.getString("endpoint")
+            val headersMap: Map<String, String> =
+                Gson().fromJson<Map<String, String>>(auth.getString("headers"), Map::class.java)
+            val encodedConnectionFactory = if (headersMap.containsValue("application/json"))
+                JsonEncodedConnectionFactory() else UrlEncodedConnectionFactory()
 
-                val authorizer = HttpAuthorizer(endpoint,  encodedConnectionFactory)
-                authorizer.setHeaders(headersMap)
+            val authorizer = HttpAuthorizer(endpoint, encodedConnectionFactory)
+            authorizer.setHeaders(headersMap)
 
-                pusherOptions.authorizer = authorizer
-            }
-
-            pusherOptions.setHost(options.getString("host"))
-
-            if(!options.isNull("cluster")) {
-                pusherOptions.setCluster(options.getString("cluster"))
-            }
-
-            pusherOptions.activityTimeout = options.getLong("activityTimeout")
-            pusherOptions.pongTimeout = options.getLong("pongTimeout")
-            pusherOptions.maxReconnectionAttempts = options.getInt("maxReconnectionAttempts")
-            pusherOptions.maxReconnectGapInSeconds = options.getInt("maxReconnectGapInSeconds")
-            pusherOptions.setWsPort(options.getInt("wsPort"))
-            pusherOptions.setWssPort(options.getInt("wssPort"))
-            pusherOptions.isUseTLS = options.getBoolean("encrypted")
-
-            _pusherInstance = Pusher(args.getString("appKey"), pusherOptions)
-
-            debugLog("Pusher initialized")
+            pusherOptions.authorizer = authorizer
         }
+
+        pusherOptions.setHost(options.getString("host"))
+
+        if (!options.isNull("cluster")) {
+            pusherOptions.setCluster(options.getString("cluster"))
+        }
+
+        pusherOptions.activityTimeout = options.getLong("activityTimeout")
+        pusherOptions.pongTimeout = options.getLong("pongTimeout")
+        pusherOptions.maxReconnectionAttempts = options.getInt("maxReconnectionAttempts")
+        pusherOptions.maxReconnectGapInSeconds = options.getInt("maxReconnectGapInSeconds")
+        pusherOptions.setWsPort(options.getInt("wsPort"))
+        pusherOptions.setWssPort(options.getInt("wssPort"))
+        pusherOptions.isUseTLS = options.getBoolean("encrypted")
+
+        _pusherInstance = Pusher(args.getString("appKey"), pusherOptions)
+
+        debugLog("Pusher initialized")
+
 
         result.success(null)
     }
@@ -144,22 +144,34 @@ class PusherService : MChannel {
                 channelName.startsWith(PRIVATE_ENCRYPTED_PREFIX) -> {
                     val channel = _pusherInstance?.getPrivateEncryptedChannel(channelName)
                     if (channel == null || !channel.isSubscribed)
-                        _pusherInstance?.subscribePrivateEncrypted(channelName, FlutterPrivateEncryptedChannelEventListener.instance)
+                        _pusherInstance?.subscribePrivateEncrypted(
+                            channelName,
+                            FlutterPrivateEncryptedChannelEventListener.instance
+                        )
                 }
                 channelName.startsWith(PRIVATE_PREFIX) -> {
                     val channel = _pusherInstance?.getPrivateChannel(channelName)
                     if (channel == null || !channel.isSubscribed)
-                        _pusherInstance?.subscribePrivate(channelName, FlutterPrivateChannelEventListener.instance)
+                        _pusherInstance?.subscribePrivate(
+                            channelName,
+                            FlutterPrivateChannelEventListener.instance
+                        )
                 }
                 channelName.startsWith(PRESENCE_PREFIX) -> {
                     val channel = _pusherInstance?.getPresenceChannel(channelName)
                     if (channel == null || !channel.isSubscribed)
-                        _pusherInstance?.subscribePresence(channelName, FlutterPresenceChannelEventListener.instance)
+                        _pusherInstance?.subscribePresence(
+                            channelName,
+                            FlutterPresenceChannelEventListener.instance
+                        )
                 }
                 else -> {
                     val channel = _pusherInstance?.getChannel(channelName)
                     if (channel == null || !channel.isSubscribed)
-                        _pusherInstance?.subscribe(channelName, FlutterChannelEventListener.instance)
+                        _pusherInstance?.subscribe(
+                            channelName,
+                            FlutterChannelEventListener.instance
+                        )
                 }
             }
 
